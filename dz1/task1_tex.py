@@ -6,10 +6,9 @@ import os
 SCRIPT_PARENT_DIR = os.path.dirname(os.path.abspath(__file__))+'/..'
 sys.path.append(os.path.dirname(SCRIPT_PARENT_DIR))
 from tex_defines import gen_defines
-# from task1 import Markov_chain
 
 def tex_matrix(matrix):
-    return '\\begin{bmatrix}\n\t' + ' \\\\\n\t'.join([' & '.join(map(lambda x : str(x) if type(x) == int else f'{x:.2f}', line)) for line in matrix]) + '\n\\end{bmatrix}\n'
+    return '\\begin{bmatrix}\n\t' + ' \\\\\n\t'.join([' & '.join(map(lambda x : f'{x:.2f}' if type(x) in (float, np.float64) else str(x), line)) for line in matrix]) + '\n\\end{bmatrix}\n'
 
 def tex_experiment_pic(i):
     i += 1
@@ -51,15 +50,15 @@ def tex_deviation_table(deviations, caption, label):
         '}\n\t\t\hline' +
         '   &' + '\t& '.join([str(i+1) for i in range(data_len)]) +
         '''\\\\
-        \hline      Средняя оценка & ''' + ' & '.join([str(round(item, 3)) for item in deviations[0]]) + '''\\\\
-        \hline Исправленная оценка & ''' + ' & '.join([str(round(item, 3)) for item in deviations[1]]) + f'''\\\\
+        \hline    Среднее значение & ''' + ' & '.join([str(round(item, 5)) for item in deviations[0]]) + '''\\\\
+        \hline      Средняя оценка & ''' + ' & '.join([str(round(item, 5)) for item in deviations[1]]) + '''\\\\
+        \hline Исправленная оценка & ''' + ' & '.join([str(round(item, 5)) for item in deviations[2]]) + f'''\\\\
         \hline
     \end{{tabular}}
     \caption{{{caption}}}
     \label{{tab:{label}}}
 \end{{table}}''')
 
-# def generate_tex(chain : Markov_chain):
 def generate_task1_tex(dest, chain, experiment_data, deviations, pic_number):
         copy_tree(SCRIPT_PARENT_DIR+'/tex_template', dest)
         gen_defines(dest, 'Моделирование цепей Маркова, заданных матрицей переходов')
@@ -71,7 +70,7 @@ def generate_task1_tex(dest, chain, experiment_data, deviations, pic_number):
         B1[-1] = 1
 
         with open(dest+'main-project/task-text.tex', 'w') as doc:
-            doc.write(f'\subsection*{{Задание. Вариант {chain.variant}.}}' + '''
+            doc.write('\subsection*{Задание.' + (f' Вариант {chain.variant}.' if chain.variant else '') + '''}
 \label{blockN.VariantM}
 \\addcontentsline{toc}{subsection}{Задание}
 Для цепи Маркова, заданной стохастической матрицей переходов:
@@ -100,7 +99,7 @@ def generate_task1_tex(dest, chain, experiment_data, deviations, pic_number):
 
 \subsection*{Решение}\label{subsec:2}
 \\addcontentsline{toc}{subsection}{Решение}
-Cтохастическая матрица переходов для варианта '''+chain.variant + ':\n\[' + tex_matrix(chain.transition_matrix) +
+Cтохастическая матрица переходов''' + (f' для варианта {chain.variant}' if chain.variant else '') + ':\n\[' + tex_matrix(chain.transition_matrix) +
 '''\]
 \subsubsection*{Граф цепи Маркова}
 \\begin{figure}[H]
@@ -112,22 +111,18 @@ Cтохастическая матрица переходов для вариа�
 \\newpage
 
 \subsubsection*{Критерий эргодичности}
-Конечная ДЦМ является эргодичной, когда она неразложима (неприводима) и непереодична.  
-В заданной цепи нет несущественных классов и из существенных нельзя выделить несколько классов, следовательно, цепь неразложима.
-
-Так же, НОД(n), следовательно, наша цепи непереодична. 
-Следовательно, наша ДЦМ эргодична.
+По критерию эргодичности цепь эргодична, если она неразложима и апериодична. Для полного графа К5, коим и является граф представленной цепи, эти условия выполняются.
 
 \subsubsection*{Предельные вероятности}
 Рассчитаем предельные вероятности по формуле:
 \[ (P^T - E) \cdot \pi^0 = 0 \]
 
 Для заданной цепи Маркова СЛАУ приобретает следующий вид:
-\[''' + tex_matrix(A) + '+' + tex_matrix([[]]) + '=' + tex_matrix([[0]] * chain.node_count) + '''\]
+\[''' + tex_matrix(A) + '\cdot' + tex_matrix([[f'\pi_{i+1}'] for i in range(chain.node_count)]) + '=' + tex_matrix([[0]] * chain.node_count) + '''\]
 
 Данная СЛАУ является линейно зависимой и не даёт решений, поэтому последняя строка заменяется на условие $\sum \pi = 1$:
 
-\[''' + tex_matrix(A1) + '+' + tex_matrix([[]]) + '=' + tex_matrix([[item] for item in B1]) + '''\]
+\[''' + tex_matrix(A1) + '\cdot' + tex_matrix([[f'\pi_{i+1}'] for i in range(chain.node_count)]) + '=' + tex_matrix([[item] for item in B1]) + '''\]
 
 При решении данной СЛАУ получены следующие предельные вероятности:
 

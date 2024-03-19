@@ -1,6 +1,7 @@
 *
 
 !*.py
+!input*.txt
 
 !requirements.txt
 !.editorconfig

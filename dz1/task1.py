@@ -3,7 +3,6 @@ import graphviz as gv
 import getopt
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
-from matplotlib.colors import BoundaryNorm
 import sys
 import os
 
@@ -17,11 +16,16 @@ class Markov_chain:
             martix = file.read()
             file.close()
         except:
-            print("Matrix file not found. Aborted.")
+            print("Input file not found. Aborted.")
             exit(1)
         
         self._var = martix.split('\n')[0].strip()
-        self._trans_matrix = np.array([[float(item) for item in line.split()] for line in martix.split('\n')[1:]])
+        matrix_start = 1
+        if len(self._var.split()) > 1:
+            print('cum')
+            self._var = ''
+            matrix_start = 0
+        self._trans_matrix = np.array([[float(item) for item in line.split()] for line in martix.split('\n')[matrix_start:] if line])
         self._node_amount = len(self._trans_matrix)
 
         A = self._trans_matrix.transpose() - np.diag([1 for _ in self._trans_matrix])
@@ -29,7 +33,7 @@ class Markov_chain:
         B = [0] * (self._node_amount)
         B[-1] = 1
         self._P = np.linalg.solve(A, B)
-        self._edge_matrix = np.array([[probability] * self._node_amount for probability in self._P])
+        self._edge_matrix = np.array([[probability for probability in self._P]] * self._node_amount)
 
     def __str__(self) -> str:
         return (
@@ -65,7 +69,7 @@ class Markov_chain:
     def __random_transition(self, line : int) -> int:
         return np.random.choice(self._node_amount, p=self._trans_matrix[line])
 
-    def run_experiment(self, num_transitions : int = 100, plot = False, plot_dest = '', exp_number = -1) -> list[int]:
+    def run_experiment(self, num_transitions : int = 100, plot = False, plot_dest = '', exp_number = -1) -> list:
         cur_choice = np.random.choice(self._node_amount)
         experiment = [cur_choice]
         for _ in range(num_transitions):
@@ -126,15 +130,15 @@ class Markov_chain:
 
 
 def print_usage():
-    print('python3 task1.py [-m matrix_file] [-d dir_tex]')
+    print('Usage: python3 task1.py [-i input_filename] [-d dir_tex] [-n num_of_graphics]')
 
 # uncorrected and corrected standard deviation
 def get_deviation(data):
     avg = np.average(data)
     summ = sum([(item - avg) ** 2 for item in data])
-    return np.sqrt(summ / len(data)), np.sqrt(summ / (len(data) - 1))
+    return avg, np.sqrt(summ / len(data)), np.sqrt(summ / (len(data) - 1))
 
-def main(matrix_filename = 'dz1/matrix.txt', tex_dest = 'dz1/task1_doc/', pic_num = 3):
+def main(matrix_filename = 'dz1/input_task1.txt', tex_dest = 'dz1/task1_doc/', pic_num = 3):
     A = Markov_chain(matrix_filename)
     A.generate_dot(tex_dest)
     imitation_data = []
@@ -156,19 +160,19 @@ def main(matrix_filename = 'dz1/matrix.txt', tex_dest = 'dz1/task1_doc/', pic_nu
 
 if __name__ == '__main__':
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "ht:d:n:", ["help", "task_matrix=", "tex_dest=", "num_picts="])
+        opts, args = getopt.getopt(sys.argv[1:], "hi:d:n:", ["help", "input=", "tex_dest=", "num_picts="])
     except getopt.GetoptError as err:
         print(err)
         print_usage()
         sys.exit(2)
-    matrix_filename = 'matrix.txt'
+    matrix_filename = 'input_task1.txt'
     tex_dest = 'task1_doc/'
     pic_num = 3
     for c, optarg in opts:
         if c in ('-h', '--help'):
             print_usage()
             exit()
-        elif c in ('-t', '--task_matrix'):
+        elif c in ('-i', '--input'):
             matrix_filename = optarg
         elif c in ('-d', '--tex_dest'):
             tex_dest = optarg
