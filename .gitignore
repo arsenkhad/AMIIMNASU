@@ -1,0 +1,16 @@
+*
+
+!*.py
+
+!requirements.txt
+!.editorconfig
+!.gitignore
+
+!dz?/
+!dz?/**/
+!tex_template/
+!tex_template/main.tex
+!tex_template/doc-spec/
+!tex_template/doc-spec/*
+!tex_template/main-project/
+!tex_template/main-project/.gitkeep
