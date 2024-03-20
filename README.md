@@ -3,9 +3,9 @@ This is a repository dedicated to "analytical models and system level simulation
 
 ## Getting started
 * Install packages listed in `requirements.txt`.
-* Update `tex_defines.py` with relevant information (for students).
+* Update `tex_init.py` with relevant information (for students).
 * Enter your input to input files in task folders (check info below).
-* Run `main.py` to generate latex reports for all works or run any `task?.py` files in `dz?` folders individually to get a direct terminal output.
+* Run `main.py` to generate latex reports for all works or run any `task?.py` files in `dz?` folders individually to get a direct terminal output for any individual task.
 
 Below will be placed and updated information about all tasks individually.
 
