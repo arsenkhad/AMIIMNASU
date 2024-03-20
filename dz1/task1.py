@@ -9,7 +9,7 @@ import os
 SCRIPT_PARENT_DIR = os.path.dirname(os.path.abspath(__file__))+'/..'
 sys.path.append(os.path.dirname(SCRIPT_PARENT_DIR))
 from task1_tex import generate_task1_tex
-class Markov_chain:
+class MarkovChain:
     def __init__(self, martix : str) -> None:
         try:
             file = open(martix, 'r')
@@ -37,9 +37,9 @@ class Markov_chain:
 
     def __str__(self) -> str:
         return (
-            f'\nМатрица переходов:\n{Markov_chain.__matrix_to_string(self._trans_matrix)}\n'
-            f'\nПредельные вероятности:\n{Markov_chain.__matrix_to_string([self._P])}\n'
-            f'\nПредельная матрица переходов:\n{Markov_chain.__matrix_to_string(self._edge_matrix)}\n'
+            f'\nМатрица переходов:\n{MarkovChain.__matrix_to_string(self._trans_matrix)}\n'
+            f'\nПредельные вероятности:\n{MarkovChain.__matrix_to_string([self._P])}\n'
+            f'\nПредельная матрица переходов:\n{MarkovChain.__matrix_to_string(self._edge_matrix)}\n'
         )
     
     @staticmethod
@@ -139,7 +139,7 @@ def get_deviation(data):
     return avg, np.sqrt(summ / len(data)), np.sqrt(summ / (len(data) - 1))
 
 def main(matrix_filename = 'dz1/input_task1.txt', tex_dest = 'dz1/task1_doc/', pic_num = 3):
-    A = Markov_chain(matrix_filename)
+    A = MarkovChain(matrix_filename)
     img_dest = 'images/' if tex_dest else 'dz1_task1_images/'
     try:
         os.mkdir(img_dest)
