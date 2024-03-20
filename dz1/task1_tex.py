@@ -1,11 +1,11 @@
 import numpy as np
-from distutils.dir_util import copy_tree
 import sys
 import os
 
-SCRIPT_PARENT_DIR = os.path.dirname(os.path.abspath(__file__))+'/..'
-sys.path.append(os.path.dirname(SCRIPT_PARENT_DIR))
-from tex_defines import gen_defines
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+# sys.path.append(os.path.dirname(SCRIPT_DIR+'/..'))
+from tex_init import tex_init
 
 def tex_matrix(matrix):
     return '\\begin{bmatrix}\n\t' + ' \\\\\n\t'.join([' & '.join(map(lambda x : f'{x:.2f}' if type(x) in (float, np.float64) else str(x), line)) for line in matrix]) + '\n\\end{bmatrix}\n'
@@ -59,9 +59,8 @@ def tex_deviation_table(deviations, caption, label):
     \label{{tab:{label}}}
 \end{{table}}''')
 
-def generate_task1_tex(dest, chain, experiment_data, deviations, pic_number):
-        copy_tree(SCRIPT_PARENT_DIR+'/tex_template', dest)
-        gen_defines(dest, 'Моделирование цепей Маркова, заданных матрицей переходов')
+def generate_task1_tex(dest, images_src, chain, experiment_data, deviations, pic_number):
+        main_dest = tex_init(dest, images_path=images_src, lab_title='Моделирование цепей Маркова, заданных матрицей переходов')
 
         A = chain.transition_matrix.transpose() - np.diag([1 for _ in chain.transition_matrix])
         A1 = A.copy()
@@ -69,7 +68,7 @@ def generate_task1_tex(dest, chain, experiment_data, deviations, pic_number):
         B1 = [0] * (chain.node_count)
         B1[-1] = 1
 
-        with open(dest+'main-project/task-text.tex', 'w') as doc:
+        with open(main_dest, 'w') as doc:
             doc.write('\subsection*{Задание.' + (f' Вариант {chain.variant}.' if chain.variant else '') + '''}
 \label{blockN.VariantM}
 \\addcontentsline{toc}{subsection}{Задание}

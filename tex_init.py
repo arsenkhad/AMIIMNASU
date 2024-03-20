@@ -1,3 +1,6 @@
+from distutils.dir_util import copy_tree, remove_tree
+import os
+
 author = 'Хадарцев Арсений Витальевич'
 group = 'РК6-83Б'
 teacher = 'Берчун Ю.В.'
@@ -21,3 +24,18 @@ def gen_defines(dest, lab_title):
 \\newcommand{{\\Year}}{{{year}}}
 \\newcommand{{\\Country}}{{Россия}}
 \\newcommand{{\\City}}{{Москва}}''')
+        
+def tex_init(dest, lab_title, images_path = '', clean = True):
+    copy_tree('tex_template', dest)
+    main_folder = dest+'main-project'
+    try:
+        os.mkdir(main_folder)
+    except FileExistsError:
+        pass
+    if images_path:
+        copy_tree(images_path, dest+'images')
+        if clean:
+            remove_tree(images_path)
+
+    gen_defines(dest, lab_title)
+    return main_folder + '/task-text.tex'

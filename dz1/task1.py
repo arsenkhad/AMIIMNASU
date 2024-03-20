@@ -86,7 +86,7 @@ class Markov_chain:
         for i, line in enumerate(self._trans_matrix):
             for j, trans in enumerate(line):
                 graph.edge(str(i+1), str(j+1), label=str(trans))
-        graph.render(filename=dest+'images/markov-chain', engine='sfdp')
+        graph.render(filename=dest+'markov-chain', engine='sfdp')
 
     @staticmethod
     def plot_transitions(data, dest='', exp_number=-1):
@@ -140,10 +140,15 @@ def get_deviation(data):
 
 def main(matrix_filename = 'dz1/input_task1.txt', tex_dest = 'dz1/task1_doc/', pic_num = 3):
     A = Markov_chain(matrix_filename)
-    A.generate_dot(tex_dest)
+    img_dest = 'images/' if tex_dest else 'dz1_task1_images/'
+    try:
+        os.mkdir(img_dest)
+    except FileExistsError:
+        pass
+    A.generate_dot(img_dest)
     imitation_data = []
     for i in range(50):
-        result = A.run_experiment(plot = True if i < (pic_num * 2 - 1) and not i % 2 else False, plot_dest=tex_dest+'images/', exp_number=i // 2 + 1)
+        result = A.run_experiment(plot = True if i < (pic_num * 2 - 1) and not i % 2 else False, plot_dest=img_dest, exp_number=i // 2 + 1)
         rel_frequencies = [result.count(i) / 101 for i in range(A.node_count)]
         imitation_data.append(rel_frequencies)
 
@@ -156,7 +161,7 @@ def main(matrix_filename = 'dz1/input_task1.txt', tex_dest = 'dz1/task1_doc/', p
     print('\nИсправленная оценка:')
     print(*map(lambda x : round(x, 3), deviations[1]), sep='\t')
     if tex_dest:
-        generate_task1_tex(tex_dest, A, imitation_data, deviations, 3)
+        generate_task1_tex(tex_dest, img_dest, A, imitation_data, deviations, 3)
 
 if __name__ == '__main__':
     try:
@@ -165,8 +170,8 @@ if __name__ == '__main__':
         print(err)
         print_usage()
         sys.exit(2)
-    matrix_filename = 'input_task1.txt'
-    tex_dest = 'task1_doc/'
+    matrix_filename = SCRIPT_PARENT_DIR+'/dz1/input_task1.txt'
+    tex_dest = ''
     pic_num = 3
     for c, optarg in opts:
         if c in ('-h', '--help'):
@@ -178,7 +183,7 @@ if __name__ == '__main__':
             tex_dest = optarg
         elif c in ('-n', '--num_pics'):
             pic_num = int(optarg)
-    if tex_dest[-1] != '/':
+    if tex_dest and tex_dest[-1] != '/':
         tex_dest += '/'
 
     main(matrix_filename, tex_dest, pic_num)
