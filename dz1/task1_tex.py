@@ -4,8 +4,9 @@ import os
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
-# sys.path.append(os.path.dirname(SCRIPT_DIR+'/..'))
+
 from tex_init import tex_init
+from markov_chain import MarkovChain
 
 def tex_matrix(matrix):
     return '\\begin{bmatrix}\n\t' + ' \\\\\n\t'.join([' & '.join(map(lambda x : f'{x:.2f}' if type(x) in (float, np.float64) else str(x), line)) for line in matrix]) + '\n\\end{bmatrix}\n'
@@ -23,8 +24,9 @@ def tex_experiment_pic(i):
 
 def tex_experiment_table(data, caption, label, columns = 1):
     data_len = len(data[0])
+    table_len = len(data) // columns
+    data = [data[i + j * table_len] for i in range(table_len) for j in range(columns)]
     data = np.array(data).reshape(-1, data_len * columns)
-    table_len = len(data)
     return ('''\\begin{table}[H]
     \centering
     \\begin{tabular}{''' +
@@ -59,7 +61,7 @@ def tex_deviation_table(deviations, caption, label):
     \label{{tab:{label}}}
 \end{{table}}''')
 
-def generate_task1_tex(dest, images_src, chain, experiment_data, deviations, pic_number):
+def generate_task1_tex(dest, images_src, chain : MarkovChain, experiment_data, deviations, pic_number):
         main_dest = tex_init(dest, images_path=images_src, lab_title='Моделирование цепей Маркова, заданных матрицей переходов')
 
         A = chain.transition_matrix.transpose() - np.diag([1 for _ in chain.transition_matrix])
@@ -105,7 +107,7 @@ Cтохастическая матрица переходов''' + (f' для в
     \centering
     \includegraphics[width=0.8\linewidth]{images/markov-chain.pdf}
     \caption{Граф цепи Маркова}
-    \label{fig:diod}
+    \label{fig:chain}
 \end{figure}
 \\newpage
 
@@ -140,7 +142,7 @@ Cтохастическая матрица переходов''' + (f' для в
 Для каждого из экспериментов были рассчитаны относительне частоты наблюдений вхождения в
 каждое из состояний системы.
 
-''' + tex_experiment_table(experiment_data, 'Относительные частоты наблюдений для 50 экспериментов', 'freq-experiment', 2) + '''
+''' + tex_experiment_table(experiment_data, 'Относительные частоты наблюдений для 50 экспериментов', 'freq-experiment', len(experiment_data) // 35 + 1) + '''
 
 \\newpage
 Выборочная средняя оценка среднеквадратичного отклонения:
@@ -155,6 +157,3 @@ Cтохастическая матрица переходов''' + (f' для в
 ''' + tex_deviation_table(deviations, 'Среднеквадратичные отклонения относительных частот', 'deviations') + '''
 
 ''')
-
-
-        
