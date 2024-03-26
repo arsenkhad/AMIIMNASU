@@ -11,7 +11,7 @@ from task1 import check_default
 from class_chain import ClassifiedMarkovChain
 
 class TaskDefaults():
-    input_path = SCRIPT_PARENT_DIR+'/dz1/input_task1.txt'
+    input_path = SCRIPT_PARENT_DIR+'/dz1/input_task2.txt'
     exp_num    = 50
     trans_num  = 100
     N_num      = 6
@@ -41,7 +41,7 @@ def print_usage():
     print('\t-N --N_graphics NUM\033[0m')
     print(f'\t\tset amount of graphics, produced from open class N. By default {TaskDefaults.N_num}.')
 
-    print('\t-N --N_graphics NUM\033[0m')
+    print('\t-c --closed_graphics NUM\033[0m')
     print(f'\t\tset amount of graphics, produced per node from closed classes. By default {TaskDefaults.m_num}.')
     print()
 
@@ -86,7 +86,7 @@ def main(input_filename = 'dz1/input_task2.txt', tex_dest = 'dz1/task2_doc/', ex
 
 if __name__ == '__main__':
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hi:d:e:t:N:m:", ["help", "input=", "tex_dest=", "node_experiments=", "transition_count=", "N_graphics=", "closed_graphics="])
+        opts, args = getopt.getopt(sys.argv[1:], "hi:d:e:t:N:c:", ["help", "input=", "tex_dest=", "node_experiments=", "transition_count=", "N_graphics=", "closed_graphics="])
     except getopt.GetoptError as err:
         print(err)
         print_usage()
@@ -111,7 +111,7 @@ if __name__ == '__main__':
             trans_num = int(optarg)
         elif c in ('-N', '--N_graphics'):
             N_num = int(optarg)
-        elif c in ('-m', '--closed_graphics'):
+        elif c in ('-c', '--closed_graphics'):
             m_num = int(optarg)
     
     input_filename = check_default(input_filename, TaskDefaults.input_path, 'Path to input file')

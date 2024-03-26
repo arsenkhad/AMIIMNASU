@@ -1,13 +1,17 @@
 import sys
 import numpy as np
 import graphviz as gv
+from enum import Enum
 import matplotlib.pyplot as plt
 from multipledispatch import dispatch
 from matplotlib.collections import LineCollection
 
+SolveMethod = Enum('Method', ('NO_SOLVE', 'SLAE', 'MULT'))
+    
+
 class MarkovChain():
-    @dispatch(str, multiply=bool)
-    def __init__(self, input_file : str, multiply : bool = False) -> None:
+    @dispatch(str, method=SolveMethod)
+    def __init__(self, input_file : str, method : SolveMethod = SolveMethod.SLAE) -> None:
         try:
             file = open(input_file, 'r')
             input = file.read()
@@ -23,19 +27,27 @@ class MarkovChain():
             matrix_start = 0
         trans_matrix = np.array([[float(item) for item in line.split()] for line in input.split('\n')[matrix_start:] if line])
 
-        self.__initialize__(trans_matrix, variant, multiply)
+        self.__initialize__(trans_matrix, variant, method)
 
-    @dispatch((list, np.ndarray), var=(str, int), mult=bool)
-    def __init__(self, matrix : list | np.ndarray, var : str | int = '', mult : bool = False):
+    @dispatch((list, np.ndarray), var=(str, int), method=SolveMethod)
+    def __init__(self, matrix : list | np.ndarray, var : str | int = '', method : SolveMethod = SolveMethod.SLAE):
         var = str(var)
-        self.__initialize__(matrix, var, mult)
+        self.__initialize__(matrix, var, method)
 
-    def __initialize__(self, matrix : list | np.ndarray, var : str, mult : bool):
+    def __initialize__(self, matrix : list | np.ndarray, var : str, method : SolveMethod):
         self._var = var
         self._trans_matrix = np.array(matrix)
         self._node_amount = len(self._trans_matrix)
 
-        if mult:
+        if method == SolveMethod.SLAE:
+            A = self._trans_matrix.transpose() - np.diag([1 for _ in self._trans_matrix])
+            A[-1] = [1] * self._node_amount
+            B = [0] * (self._node_amount)
+            B[-1] = 1
+
+            self._P = np.linalg.solve(A, B)
+            self._edge_matrix = np.array([[probability for probability in self._P]] * self._node_amount)
+        elif method == SolveMethod.MULT:
             cur_matrix = self._trans_matrix
             eps = 1
             while eps > sys.float_info.epsilon:
@@ -46,13 +58,7 @@ class MarkovChain():
             self._P = None
             self._edge_matrix = cur_matrix
         else:
-            A = self._trans_matrix.transpose() - np.diag([1 for _ in self._trans_matrix])
-            A[-1] = [1] * self._node_amount
-            B = [0] * (self._node_amount)
-            B[-1] = 1
-
-            self._P = np.linalg.solve(A, B)
-            self._edge_matrix = np.array([[probability for probability in self._P]] * self._node_amount)
+            self._edge_matrix = np.zeros((self._node_amount, self._node_amount))
 
 
     def __str__(self) -> str:

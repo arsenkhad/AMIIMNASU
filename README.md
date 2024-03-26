@@ -32,42 +32,6 @@ Input contains following parts:
 0.16	0.23	0.25	0.22	0.14
 ```
 
-### Task1
-Modeling and processing of Markov chains, set by transition matrix.
-
-#### Input
-Input filename is `input_task1.txt` by default, but can be set when launching `task1.py` individually.
-
-Input contains following parts:
-* Variant number (optional, required for students)
-* Matrix NxN
-#### Input example
-```
-74				
-0.19    0.17	0.23	0.21	0.2
-0.23	0.15	0.21	0.17	0.24
-0.23	0.25	0.25	0.17	0.1
-0.16	0.25	0.18	0.22	0.19
-0.16	0.23	0.25	0.22	0.14
-```
-### Task1
-Modeling and processing of Markov chains, set by transition matrix.
-
-#### Input
-Input filename is `input_task1.txt` by default, but can be set when launching `task1.py` individually.
-
-Input contains following parts:
-* Variant number (optional, required for students)
-* Matrix NxN
-#### Input example
-```
-74				
-0.19    0.17	0.23	0.21	0.2
-0.23	0.15	0.21	0.17	0.24
-0.23	0.25	0.25	0.17	0.1
-0.16	0.25	0.18	0.22	0.19
-0.16	0.23	0.25	0.22	0.14
-```
 ### Task2
 Modeling and processing of Markov chains with one open and multiple closed classes.
 

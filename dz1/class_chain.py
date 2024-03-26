@@ -1,11 +1,11 @@
 import numpy as np
 import graphviz as gv
 import matplotlib.pyplot as plt
-from markov_chain import MarkovChain
+from markov_chain import MarkovChain, SolveMethod
 
 class ClassifiedMarkovChain(MarkovChain):
     def __init__(self, input: str) -> None:
-        super().__init__(input)
+        super().__init__(input, method=SolveMethod.NO_SOLVE)
 
         components = self.get_components()
         self._N_class_num = components[0]
@@ -27,10 +27,9 @@ class ClassifiedMarkovChain(MarkovChain):
             N[self._N_class_num.index(self._bridges[i][1])][N_len + i] = self._bridges[i][0]
             N[N_len + i][N_len + i] = 1
 
-        self._N_class = MarkovChain(N, mult=True)
+        self._N_class = MarkovChain(N, method=SolveMethod.MULT)
 
         offset = N_len
-        self._edge_matrix.fill(0)
         for k, m_class in enumerate(self._closed_classes):
             ln = m_class.node_count
             trans_line = components[k+1].index(self._bridges[k][2])
@@ -99,10 +98,11 @@ class ClassifiedMarkovChain(MarkovChain):
             subgraph = gv.Digraph(f'cluster_{k}', engine='fdp', node_attr={'rank' : 'min' if k else 'max'})
             for i in component:
                 for j, trans in enumerate(self.transition_matrix[i]):
-                    if j in component:
-                        subgraph.edge(str(i+1), str(j+1), label=str(trans))
-                    elif trans:
-                        graph.edge(str(i+1), str(j+1), label=str(trans))
+                    if trans:
+                        if j in component:
+                            subgraph.edge(str(i+1), str(j+1), label=str(trans))
+                        else:
+                            graph.edge(str(i+1), str(j+1), label=str(trans))
             graph.subgraph(subgraph)
 
         if dest:

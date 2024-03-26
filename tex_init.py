@@ -40,8 +40,13 @@ def tex_experiment_pic(i):
 \end{{figure}}
 '''
         
-def tex_init(dest, lab_title, images_path = '', clean = True):
+def tex_init(dest : str, lab_title : str, images_path = '', clean = True):
+    if dest[-1] != '/':
+        dest += '/'
     copy_tree('tex_template', dest)
+    main_title = dest.split('/')[-2]
+    if main_title and main_title != '.':
+        os.rename(dest+'main.tex', dest+main_title+'.tex')
     main_folder = dest+'main-project'
     try:
         os.mkdir(main_folder)

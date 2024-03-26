@@ -7,7 +7,7 @@ sys.path.append(os.path.dirname(SCRIPT_DIR))
 from tex_init import tex_init, tex_matrix
 
 def generate_task2_tex(dest, img_src, chain : ClassifiedMarkovChain, experiment_data):
-    main_dest = tex_init(dest, '', img_src)
+    main_dest = tex_init(dest, 'Моделирование цепей Маркова с значащими и незначащими классами', img_src)
     with open(main_dest, 'w') as doc:
             doc.write('\subsection*{Задание.' + (f' Вариант {chain.variant}.' if chain.variant else '') + '''}
 \label{blockN.VariantM}
