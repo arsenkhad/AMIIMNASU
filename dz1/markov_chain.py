@@ -1,10 +1,13 @@
+import sys
 import numpy as np
 import graphviz as gv
 import matplotlib.pyplot as plt
+from multipledispatch import dispatch
 from matplotlib.collections import LineCollection
 
-class MarkovChain:
-    def __init__(self, input_file : str) -> None:
+class MarkovChain():
+    @dispatch(str, multiply=bool)
+    def __init__(self, input_file : str, multiply : bool = False) -> None:
         try:
             file = open(input_file, 'r')
             input = file.read()
@@ -13,31 +16,58 @@ class MarkovChain:
             print("Input file not found. Aborted.")
             exit(1)
         
-        self._var = input.split('\n')[0].strip()
+        variant = input.split('\n')[0].strip()
         matrix_start = 1
-        if len(self._var.split()) > 1:
-            print('cum')
-            self._var = ''
+        if len(variant.split()) > 1:
+            variant = ''
             matrix_start = 0
-        self._trans_matrix = np.array([[float(item) for item in line.split()] for line in input.split('\n')[matrix_start:] if line])
+        trans_matrix = np.array([[float(item) for item in line.split()] for line in input.split('\n')[matrix_start:] if line])
+
+        self.__initialize__(trans_matrix, variant, multiply)
+
+    @dispatch((list, np.ndarray), var=(str, int), mult=bool)
+    def __init__(self, matrix : list | np.ndarray, var : str | int = '', mult : bool = False):
+        var = str(var)
+        self.__initialize__(matrix, var, mult)
+
+    def __initialize__(self, matrix : list | np.ndarray, var : str, mult : bool):
+        self._var = var
+        self._trans_matrix = np.array(matrix)
         self._node_amount = len(self._trans_matrix)
 
-        A = self._trans_matrix.transpose() - np.diag([1 for _ in self._trans_matrix])
-        A[-1] = [1] * self._node_amount
-        B = [0] * (self._node_amount)
-        B[-1] = 1
-        self._P = np.linalg.solve(A, B)
-        self._edge_matrix = np.array([[probability for probability in self._P]] * self._node_amount)
+        if mult:
+            cur_matrix = self._trans_matrix
+            eps = 1
+            while eps > sys.float_info.epsilon:
+                new_matrix = np.matmul(cur_matrix, cur_matrix)
+                eps = max(map(abs, (new_matrix - cur_matrix).flatten()))
+                cur_matrix = new_matrix
+
+            self._P = None
+            self._edge_matrix = cur_matrix
+        else:
+            A = self._trans_matrix.transpose() - np.diag([1 for _ in self._trans_matrix])
+            A[-1] = [1] * self._node_amount
+            B = [0] * (self._node_amount)
+            B[-1] = 1
+
+            self._P = np.linalg.solve(A, B)
+            self._edge_matrix = np.array([[probability for probability in self._P]] * self._node_amount)
+
 
     def __str__(self) -> str:
         return (
-            f'\nМатрица переходов:\n{MarkovChain.__matrix_to_string(self._trans_matrix)}\n'
-            f'\nПредельные вероятности:\n{MarkovChain.__matrix_to_string([self._P])}\n'
-            f'\nПредельная матрица переходов:\n{MarkovChain.__matrix_to_string(self._edge_matrix)}\n'
+            f'\nМатрица переходов:\n{MarkovChain.matrix_to_string(self._trans_matrix)}\n'
+            f'\nПредельные вероятности:\n{MarkovChain.matrix_to_string([self._P])}\n'
+            f'\nПредельная матрица переходов:\n{MarkovChain.matrix_to_string(self._edge_matrix)}\n'
         )
     
     @staticmethod
-    def __matrix_to_string(matrix):
+    def matrix_to_string(matrix):
+        try:
+            matrix[0][0]
+        except:
+            return None
         return '\n'.join('\t'.join(str(round(item, 3)) for item in line) for line in matrix)
 
     @property
@@ -63,11 +93,11 @@ class MarkovChain:
     def __random_transition(self, line : int) -> int:
         return np.random.choice(self._node_amount, p=self._trans_matrix[line])
 
-    def run_experiment(self, num_transitions : int = 100, plot = False, plot_dest = '', exp_number = -1) -> list:
-        cur_choice = np.random.choice(self._node_amount)
+    def run_experiment(self, num_transitions : int = 100, start_choice = None, plot = False, plot_dest = '', exp_number = -1, rand_func = __random_transition) -> list:
+        cur_choice = start_choice if start_choice else np.random.choice(self._node_amount)
         experiment = [cur_choice]
         for _ in range(num_transitions):
-            cur_choice = self.__random_transition(cur_choice)
+            cur_choice = rand_func(self, cur_choice)
             experiment.append(cur_choice)
         
         if plot:
@@ -75,12 +105,14 @@ class MarkovChain:
         return experiment
 
 
-    def generate_dot(self, dest):
+    def generate_dot(self, dest=''):
         graph = gv.Digraph()
         for i, line in enumerate(self._trans_matrix):
             for j, trans in enumerate(line):
                 graph.edge(str(i+1), str(j+1), label=str(trans))
-        graph.render(filename=dest+'markov-chain', engine='sfdp')
+        if dest:
+            graph.render(filename=dest+'markov-chain', engine='sfdp')
+        return graph
 
     @staticmethod
     def plot_transitions(data, dest='', exp_number=-1):

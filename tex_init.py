@@ -1,4 +1,5 @@
 from distutils.dir_util import copy_tree, remove_tree
+import numpy as np
 import os
 
 author = 'Хадарцев Арсений Витальевич'
@@ -24,6 +25,20 @@ def gen_defines(dest, lab_title):
 \\newcommand{{\\Year}}{{{year}}}
 \\newcommand{{\\Country}}{{Россия}}
 \\newcommand{{\\City}}{{Москва}}''')
+        
+def tex_matrix(matrix):
+    return '\\begin{bmatrix}\n\t' + ' \\\\\n\t'.join([' & '.join(map(lambda x : f'{x:.2f}' if type(x) in (float, np.float64) else str(x), line)) for line in matrix]) + '\n\\end{bmatrix}\n'
+
+def tex_experiment_pic(i):
+    i += 1
+    return f'''
+\\begin{{figure}}[H]
+    \centering
+    \includegraphics[width=\linewidth]{{images/exp{i}.png}}
+    \caption{{Эксперимент {i}}}
+    \label{{fig:exp{i}}}
+\end{{figure}}
+'''
         
 def tex_init(dest, lab_title, images_path = '', clean = True):
     copy_tree('tex_template', dest)
