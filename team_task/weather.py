@@ -156,11 +156,11 @@ class WeatherData:
         return [item for item in self.__records if item.decade == decade]
 
     def get_decade_avgs(self, decade):
-        avgs = []
+        avgs = {}
         for year in self.years_set:
             avg = self.decade_avg(year, decade)
             if avg != None:
-                avgs.append(avg)
+                avgs[year] = avg
         if not avgs:
             print(f'Warning! No records of decade {decade} in given data.')
         return avgs

@@ -2,6 +2,7 @@ import os
 import sys
 import datetime
 import numpy as np
+from collections.abc import Iterable
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 SCRIPT_PARENT_DIR = '/'.join(SCRIPT_DIR.split('/')[:-1])
@@ -11,66 +12,128 @@ sys.path.append(os.path.dirname(SCRIPT_DIR))
 from weather import WeatherData, WeatherRecord
 from dz1.markov_chain import MarkovChain
 
-class StateChecker:
-    def __init__(self, start, end) -> None:
-        self.__start = start
-        self.__end = end
 
-    def __call__(self, temperature):
-        if self.__start <= temperature < self.__end:
-            return True
-        return False
+def print_matrix(matrix):
+    print('', *['\t'.join(str(round(item, 3)) for item in line) for line in matrix], '', sep='\n')
+
+def get_intervals(in_data, min_val, max_val):
+    intervals = np.linspace(np.floor(min_val), np.ceil(max_val), int(np.ceil(max_val) - np.floor(min_val)) + 1)
+    data_sorted = sorted(in_data)
+    len_avgs = len(data_sorted)
+    interval_tuples = []
     
-    @property
-    def edges(self):
-        return (self.__start, self.__end)
+    interval_end = 0
+    interval_sizes = []
+    for i, int_end in enumerate(intervals[1:]):
+        interval_start = interval_end
+        while interval_end < len_avgs and data_sorted[interval_end] < int_end:
+            interval_end += 1
+        interval_sizes.append(len(data_sorted[interval_start:interval_end]))
 
-class States:
-    def __init__(self, min_temp, max_temp, state_amount=12) -> None:
-        state_breakpoints = np.linspace(min_temp, max_temp, state_amount + 1)
-        self.__states : list[StateChecker] = []
-        for i in range(state_amount):
-            self.__states.append(StateChecker(state_breakpoints[i], state_breakpoints[i+1]))
-
-    def check_entry(self, temperature):
-        for i, state in enumerate(self.__states):
-                if state(temperature):
-                    return i
-
-    def check_entries(self, temperatures):
-        return [self.check_entry(temp) for temp in temperatures]
-    
-    def get_state(self, index):
-        if index < 0 or index >= len(self.__states):
-            return None
-        return self.__states[index].edges
+    group_stop = max(interval_sizes)
+    cur_block_size = 0
+    cur_block_start = 0
+    for i, ln in enumerate(interval_sizes):
+        cur_block_size += ln
+        if cur_block_size >= group_stop:
+            if ln >= group_stop:
+                if cur_block_size != ln:
+                    interval_tuples.append((intervals[cur_block_start], intervals[i]))
+                interval_tuples.append((intervals[i], intervals[i+1]))
+            else:
+                interval_tuples.append((intervals[cur_block_start], intervals[i+1]))
+            cur_block_size = 0
+            cur_block_start = i+1
+    if cur_block_size:
+        interval_tuples.append((intervals[cur_block_start], intervals[-1]))
+    return interval_tuples
 
 
+def check_entries(data, intervals):
+    iterable = isinstance(data, Iterable)
+    if not iterable:
+        data = [data]
+    entries = []
+    for item in data:
+        entry = None
+        for i, interval in enumerate(intervals):
+            if interval[0] <= item < interval[1]:
+                entry = i
+                break
+        if entry == None:
+            if item == intervals[-1][1]:
+                entry = len(intervals) - 1
+            else:
+                raise ValueError(f'{data} doesn`t belong to any of intervals')
+        entries.append(entry)
+    return entries if iterable else entries[0]
 
-def v1(data : WeatherData, cur_weather, start_decade : int, end_decade : int, state_amount = 12):
+
+def v1(data : WeatherData, cur_weather, start_decade : int, end_decade : int):
     if start_decade < 1 or start_decade > 36 or end_decade < 1 or end_decade > 36:
         raise ValueError('Decade must be in 1..36')
     start_decade_data = data.get_decade_avgs(start_decade)
     end_decade_data = data.get_decade_avgs(end_decade)
 
     start_end_full_data = data.get_decade_all(start_decade) + data.get_decade_all(end_decade)
-    states = States(min(start_end_full_data, key=lambda x: x.temperature).temperature, max(start_end_full_data, key=lambda x: x.temperature).temperature, state_amount)
 
-    start_decade_states = states.check_entries(start_decade_data)
-    end_decade_states = states.check_entries(end_decade_data)
+    min_temp = min(start_end_full_data, key=lambda x: x.temperature).temperature
+    max_temp = max(start_end_full_data, key=lambda x: x.temperature).temperature
+    print(min_temp, max_temp)
+
+    intervals = get_intervals([*start_decade_data.values(), *end_decade_data.values()], min_temp, max_temp)
+    state_amount = len(intervals)
+
+    start_decade_states = check_entries(start_decade_data.values(), intervals)
+    end_decade_states   = check_entries(end_decade_data.values(),   intervals)
 
     transitions = zip(start_decade_states, end_decade_states)
     trans_matrix = np.zeros((state_amount, state_amount))
     for trans in transitions:
         trans_matrix[trans[0]][trans[1]] += 1
-    for i in range(state_amount):
-        amount = start_decade_states.count(i)
-        if amount:
-            trans_matrix[i] /= amount
+    for i, line in enumerate(trans_matrix):
+        if line.any():
+            trans_matrix[i] /= sum(line)
 
-    print(*trans_matrix, '', sep='\n')
+    print_matrix(trans_matrix)
+    print_matrix([trans_matrix[check_entries(cur_weather, intervals)]])
 
-    print(trans_matrix[states.check_entry(cur_weather)])
+def v2(data : WeatherData, cur_weather, start_decade : int, end_decade : int):
+    if start_decade < 1 or start_decade > 36 or end_decade < 1 or end_decade > 36:
+        raise ValueError('Decade must be in 1..36')
+    inspected_data = []
+    for decade in range(start_decade, end_decade + 1):
+        inspected_data.append({'decade' : decade, 'temperatures' : data.get_decade_all(decade), 'avgs' : data.get_decade_avgs(decade)})
+
+    max_temp = -np.inf
+    min_temp = np.inf
+
+    for decade in inspected_data:
+        temp_max = max(decade['temperatures'], key=lambda x: x.temperature).temperature
+        temp_min = min(decade['temperatures'], key=lambda x: x.temperature).temperature
+        if temp_max > max_temp:
+            max_temp = temp_max
+        if temp_min < min_temp:
+            min_temp = temp_min
+    print(min_temp, max_temp)
+
+    intervals = get_intervals([temp for item in inspected_data for temp in item['avgs'].values()], min_temp, max_temp)
+    state_amount = len(intervals)
+
+    transitions = []
+    for year in data.years_set:
+        transitions.append(check_entries([decade['avgs'][year] for decade in inspected_data], intervals))
+
+    trans_matrix = np.zeros((state_amount, state_amount))
+    for trans_year in transitions:
+        for i in range(len(trans_year) - 1):
+            trans_matrix[trans_year[i]][trans_year[i+1]] += 1
+    for i, line in enumerate(trans_matrix):
+        if line.any():
+            trans_matrix[i] /= sum(line)
+
+    print_matrix(trans_matrix)
+    print_matrix([trans_matrix[check_entries(cur_weather, intervals)]])
 
 
 def main():
@@ -82,4 +145,5 @@ def main():
     #     print(item)
     # print('Avg:', weather.decade_avg(2023, 4))
     v1(weather, -4.247, 4, 13)
+    v2(weather, -4.247, 4, 13)
 main()
