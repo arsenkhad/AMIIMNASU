@@ -120,12 +120,12 @@ def v2(data : WeatherData, cur_weather, start_decade : int, end_decade : int):
     intervals = get_intervals([temp for item in inspected_data for temp in item['avgs'].values()], min_temp, max_temp)
     state_amount = len(intervals)
 
-    transitions = []
+    intervals_of_avg = []
     for year in data.years_set:
-        transitions.append(check_entries([decade['avgs'][year] for decade in inspected_data], intervals))
+        intervals_of_avg.append(check_entries([decade['avgs'][year] for decade in inspected_data], intervals))
 
     trans_matrix = np.zeros((state_amount, state_amount))
-    for trans_year in transitions:
+    for trans_year in intervals_of_avg:
         for i in range(len(trans_year) - 1):
             trans_matrix[trans_year[i]][trans_year[i+1]] += 1
     for i, line in enumerate(trans_matrix):
@@ -134,6 +134,48 @@ def v2(data : WeatherData, cur_weather, start_decade : int, end_decade : int):
 
     print_matrix(trans_matrix)
     print_matrix([trans_matrix[check_entries(cur_weather, intervals)]])
+
+
+def v3(data : WeatherData, cur_weather, start_decade : int, end_decade : int):
+    if start_decade < 1 or start_decade > 36 or end_decade < 1 or end_decade > 36:
+        raise ValueError('Decade must be in 1..36')
+    inspected_data = []
+    for decade in range(start_decade, end_decade + 1):
+        inspected_data.append({'decade' : decade, 'temperatures' : data.get_decade_all(decade), 'avgs' : data.get_decade_avgs(decade)})
+
+    max_temp = -np.inf
+    min_temp = np.inf
+
+    for decade in inspected_data:
+        temp_max = max(decade['temperatures'], key=lambda x: x.temperature).temperature
+        temp_min = min(decade['temperatures'], key=lambda x: x.temperature).temperature
+        if temp_max > max_temp:
+            max_temp = temp_max
+        if temp_min < min_temp:
+            min_temp = temp_min
+    print(min_temp, max_temp)
+
+    intervals = get_intervals([temp for item in inspected_data for temp in item['avgs'].values()], min_temp, max_temp)
+    state_amount = len(intervals)
+
+    intervals_of_avg = []
+    for year in data.years_set:
+        intervals_of_avg.append(check_entries([decade['avgs'][year] for decade in inspected_data], intervals))
+
+    decade_amount = len(inspected_data)
+    transitions = np.zeros((decade_amount, state_amount))
+    transitions[0][check_entries(cur_weather, intervals)] = 1
+    print_matrix(transitions)
+    for i in range(1, decade_amount):
+        trans_matrix = np.zeros((state_amount, state_amount))
+        for j in range(len(intervals_of_avg)):
+            trans_matrix[intervals_of_avg[j][i-1]][intervals_of_avg[j][i]] += 1
+        for j, line in enumerate(trans_matrix):
+            if line.any():
+                trans_matrix[j] /= sum(line)
+        transitions[i] = np.matmul(trans_matrix.T, transitions[i-1])
+
+    print_matrix(transitions.T)
 
 
 def main():
@@ -146,4 +188,5 @@ def main():
     # print('Avg:', weather.decade_avg(2023, 4))
     v1(weather, -4.247, 4, 13)
     v2(weather, -4.247, 4, 13)
+    v3(weather, -4.247, 4, 13)
 main()
