@@ -1,6 +1,6 @@
 import os
 import sys
-import datetime
+import graphviz as gv
 import numpy as np
 from collections.abc import Iterable
 
@@ -9,8 +9,8 @@ SCRIPT_PARENT_DIR = '/'.join(SCRIPT_DIR.split('/')[:-1])
 sys.path.append(os.path.dirname(SCRIPT_PARENT_DIR))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from weather import WeatherData, WeatherRecord
-from dz1.markov_chain import MarkovChain
+from weather import WeatherData
+from dz1.markov_chain import MarkovChain, SolveMethod
 
 
 def print_matrix(matrix):
@@ -97,7 +97,28 @@ def v1(data : WeatherData, cur_weather, start_decade : int, end_decade : int):
         if line.any():
             trans_matrix[i] /= sum(line)
 
+    graph = gv.Digraph(graph_attr={'rankdir' : 'LR', 'ranksep' : '5'}, node_attr={'shape' : 'circle', 'width': '0.6'})
+    names = ['start', 'end']
+    for i in range(state_amount):
+        for name in names:
+            graph.node(name+str(i+1), label=f'<T<SUB>{i+1}</SUB>>', group=str(i+1))
+        graph.edge(names[0]+str(i+1), names[1]+str(i+1), style='invis')
+
+
+    for i, line in enumerate(trans_matrix):
+        for j, trans in enumerate(line):
+            if trans:
+                graph.edge(names[0]+str(i+1), names[1]+str(j+1), label=str(round(trans, 2)))
+
+    for name in names:
+        subgraph = gv.Digraph(f'{name}', graph_attr={'rankdir' : 'TB', 'rank' : 'same', 'style' : 'invis'}, edge_attr={'style' : 'invis'})
+        for i in range(state_amount-1):
+            subgraph.edge(name+str(i+1), name+str(i+2), style='invis')
+        graph.subgraph(subgraph)
+    graph.render(filename=SCRIPT_DIR+'/1_markov-chain', engine='dot')
+    
     print_matrix(trans_matrix)
+    print(check_entries(cur_weather, intervals))
     print_matrix([trans_matrix[check_entries(cur_weather, intervals)]])
 
 def v2(data : WeatherData, cur_weather, start_decade : int, end_decade : int):
@@ -133,8 +154,17 @@ def v2(data : WeatherData, cur_weather, start_decade : int, end_decade : int):
     for i, line in enumerate(trans_matrix):
         if line.any():
             trans_matrix[i] /= sum(line)
-
+    
+    graph = gv.Digraph(node_attr={'shape' : 'circle', 'width': '0.6'})
+    for i, line in enumerate(trans_matrix):
+        graph.node(str(i+1), label=f'<T<SUB>{i+1}</SUB>>')
+        for j, trans in enumerate(line):
+            if trans:
+                graph.edge(str(i+1), str(j+1), label=str(round(trans, 2)))    
+    graph.render(filename=SCRIPT_DIR+'/2_markov-chain', engine='dot')
+    
     print_matrix(trans_matrix)
+    print(check_entries(cur_weather, intervals))
     print_matrix([trans_matrix[check_entries(cur_weather, intervals)]])
 
 
@@ -167,7 +197,7 @@ def v3(data : WeatherData, cur_weather, start_decade : int, end_decade : int):
     decade_amount = len(inspected_data)
     transitions = np.zeros((decade_amount, state_amount))
     transitions[0][check_entries(cur_weather, intervals)] = 1
-    print_matrix(transitions)
+
     for i in range(1, decade_amount):
         trans_matrix = np.zeros((state_amount, state_amount))
         for j in range(len(intervals_of_avg)):
@@ -178,6 +208,9 @@ def v3(data : WeatherData, cur_weather, start_decade : int, end_decade : int):
         transitions[i] = np.matmul(trans_matrix.T, transitions[i-1])
 
     print_matrix(transitions.T)
+    print(check_entries(cur_weather, intervals))
+    print_matrix([transitions[-1]])
+
 
 
 def main():
