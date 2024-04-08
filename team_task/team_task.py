@@ -46,6 +46,8 @@ def get_intervals(in_data, min_val, max_val):
             cur_block_start = i+1
     if cur_block_size:
         interval_tuples.append((intervals[cur_block_start], intervals[-1]))
+    else:
+        interval_tuples[-1] = (interval_tuples[-1][0], intervals[-1])
     return interval_tuples
 
 
