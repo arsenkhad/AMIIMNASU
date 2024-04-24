@@ -1,0 +1,9 @@
+N = 165
+G = 3
+
+intensity_a = 7
+intensity_b = 8
+N_a = 2
+N_b = 3
+R_a = 2
+R_b = 2
