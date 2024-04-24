@@ -40,7 +40,7 @@ def print_usage():
     print('\033[1m')
     print('\t-N --N_graphics NUM\033[0m')
     print(f'\t\tset amount of graphics, produced from open class N. By default {TaskDefaults.N_num}.')
-
+    print('\033[1m')
     print('\t-c --closed_graphics NUM\033[0m')
     print(f'\t\tset amount of graphics, produced per node from closed classes. By default {TaskDefaults.m_num}.')
     print()
@@ -115,10 +115,10 @@ if __name__ == '__main__':
             m_num = int(optarg)
     
     input_filename = check_default(input_filename, TaskDefaults.input_path, 'Path to input file')
-    exp_num   = check_default(exp_num,    10, 'Amount of experiments per node')
-    trans_num = check_default(trans_num, 100, 'Amount of transitions per experiment')
-    N_num     = check_default(N_num,       6, 'Amount of graphics from open class N')
-    m_num     = check_default(m_num,       2, 'Amount of graphics per node from closed classes')
+    exp_num        = check_default(exp_num,        TaskDefaults.exp_num,    'Amount of experiments per node')
+    trans_num      = check_default(trans_num,      TaskDefaults.trans_num,  'Amount of transitions per experiment')
+    N_num          = check_default(N_num,          TaskDefaults.N_num,      'Amount of graphics from open class N')
+    m_num          = check_default(m_num,          TaskDefaults.m_num,      'Amount of graphics per node from closed classes')
 
     if tex_dest and tex_dest[-1] != '/':
         tex_dest += '/'

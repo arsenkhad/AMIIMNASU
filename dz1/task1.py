@@ -49,7 +49,7 @@ def check_default(var, default_val, var_name):
 
 # uncorrected and corrected standard deviation
 def get_deviation(data):
-    avg = np.average(data)
+    avg = np.mean(data)
     summ = sum([(item - avg) ** 2 for item in data])
     return avg, np.sqrt(summ / len(data)), np.sqrt(summ / (len(data) - 1))
 
@@ -106,9 +106,9 @@ if __name__ == '__main__':
             trans_num = int(optarg)
     
     input_filename = check_default(input_filename, TaskDefaults.input_path, 'Path to input file')
-    exp_num   = check_default(exp_num,    50, 'Amount of experiments')
-    trans_num = check_default(trans_num, 100, 'Amount of transitions per experiment')
-    pic_num   = check_default(pic_num,     3, 'Amount of graphics')
+    exp_num        = check_default(exp_num,        TaskDefaults.exp_num,    'Amount of experiments')
+    trans_num      = check_default(trans_num,      TaskDefaults.trans_num,  'Amount of transitions per experiment')
+    pic_num        = check_default(pic_num,        TaskDefaults.pic_num,    'Amount of graphics')
 
     if tex_dest and tex_dest[-1] != '/':
         tex_dest += '/'
